@@ -9,11 +9,10 @@ Projeto feito da maneira mais simples, podendo utilizar posteriormente next para
 Caso queiram analizar um outro projeto mais complexo deixo a disposição nos links:
 
 https://github.com/pprimon/alexandria-front
+
 https://github.com/michaeldouglaslaraujo/Alexandria-Node
 
 ## Rodando o projeto
 
-In the project directory, you can run:
-
-### `npm install`
-### `npm start`
+# `npm install`
+# `npm start`
