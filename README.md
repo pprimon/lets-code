@@ -14,5 +14,5 @@ https://github.com/michaeldouglaslaraujo/Alexandria-Node
 
 ## Rodando o projeto
 
-# `npm install`
-# `npm start`
+`npm install`
+`npm start`
