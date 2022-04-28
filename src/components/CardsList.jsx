@@ -16,7 +16,7 @@ class CardsList extends Component {
         token: null,
         openFormModal: false,
         editCard: null, 
-        lists: {
+        list: {
           todo: [],
           doing: [],
           done: []
@@ -31,37 +31,32 @@ class CardsList extends Component {
       this.handlePreviosCard = this.handlePreviosCard.bind(this);
       this.handleEditCard = this.handleEditCard.bind(this);
       this.handleDeleteCard = this.handleDeleteCard.bind(this)
+      this.handleFormCard = this.handleFormCard.bind(this)
     }
   
     async componentDidMount() {
     
       try {
         const token = await this.getToken()
-        await this.setState({token})
-        this.getCardList()
+        const res = await getCards(token)
+        const list =  {
+          todo:  res.data.filter((item) => item.lista === 'todo'),
+          doing: res.data.filter((item) => item.lista === 'doing'),
+          done: res.data.filter((item) => item.lista === 'done')
+        }
+        
+        this.setState({
+          list,
+          currentCard: {
+            todo: {card: list.todo[0], index: 0},
+            doing: {card: list.doing[0], index: 0},
+            done:  {card: list.done[0], index: 0}
+          },
+          token
+        })
       } catch (err) {
         console.log(err)
       }
-    }
-
-    async getCardList() {
-      const {token} = this.state
-
-      const res = await getCards(token)
-      const lists =  {
-        todo:  res.data.filter((item) => item.lista === 'todo'),
-        doing: res.data.filter((item) => item.lista === 'doing'),
-        done: res.data.filter((item) => item.lista === 'done')
-      }
-      
-      this.setState({
-        lists,
-        currentCard: {
-          todo: {card: lists.todo[0], index: 0},
-          doing: {card: lists.doing[0], index: 0},
-          done:  {card: lists.done[0], index: 0}
-        },
-      })
     }
 
     async getToken() {
@@ -73,11 +68,13 @@ class CardsList extends Component {
       }
     }
     
-    async handleDeleteCard(id) {
-      const {token} = this.state
+    async handleDeleteCard(id, key) {
+      const {token, list, currentCard} = this.state
       try {
+        
         await deleteCard(id, token)
-        await this.getCardList()
+        const newList =  {...list, [key]: list[key].filter((item) => item.id !== id),}
+        this.setState({list: newList, currentCard: {...currentCard, [key]: {card: list[key][0], index: 0}}})
       } catch (err) {
         console.log(err)
       }
@@ -85,43 +82,48 @@ class CardsList extends Component {
     }
 
     handleFormCard = async (card, newCard = true) => {
-      const {token} = this.state
-      console.log(card, newCard )
+      const {token, list, currentCard} = this.state
       try {
         if(newCard) {
-          await addCard({...card, lista: 'todo'}, token)
+          const res = await addCard({...card, lista: 'todo'}, token)
+          await this.setState({list: {...list, todo: list.todo.concat([res.data])}})
         } else {
-          await updateCard(card, card.id, token)
+          const res = await updateCard(card, card.id, token)
+          const index = list[res.data.lista].findIndex((item => item.id === res.data.id))
+          list[res.data.lista][index] = res.data
+          currentCard[res.data.lista] = {card: res.data, index: index}
+          await this.setState({list, currentCard})
         }
       } catch (err) {
         console.log(err)
       }
-      await this.getCardList()
+
       this.setState({openFormModal: false, editCard: null})
     }
 
     handleNextCard(index, key) {
-      const {currentCard, lists} = this.state
+      const {currentCard, list} = this.state
       const nextIndex = index + 1
 
-      if(lists[key] && lists[key].length -1 < nextIndex) {
+      if(list[key] && list[key].length -1 < nextIndex) {
         return
       }
          
       this.setState({currentCard: {...currentCard, [key]: {
-        card: lists[key][nextIndex],
+        card: list[key][nextIndex],
         index: nextIndex
       }} })
     }
 
     handlePreviosCard(index, key) {
-      const {lists, currentCard} = this.state
+      const {list, currentCard} = this.state
       const previosIndex = index - 1
-      if((lists[key] && lists[key].length -1 < previosIndex) || (previosIndex >= -1) ) {
+
+      if(list[key] && list[key].length -1 < previosIndex || previosIndex <= -1) {
         return
       }
       this.setState({currentCard: {...currentCard, [key]: {
-        card: lists[key][previosIndex],
+        card: list[key][previosIndex],
         index: previosIndex
       }} })
     } 
@@ -136,14 +138,14 @@ class CardsList extends Component {
     }
 
     containerCard(title, key) {
-      const {lists, currentCard} = this.state
+      const {list, currentCard} = this.state
   
       return (
         <Grid item xs={4} className='list-container'>
           <p  className='list-title'>
             {title}
           </p>
-          {lists && lists[key] && lists[key].length > 0  ?
+          {list && list[key] && list[key].length > 0  &&
             (<BasicCard 
               currentCard={currentCard[key].card}
               index={currentCard[key].index}
@@ -153,7 +155,6 @@ class CardsList extends Component {
               previosCard={this.handlePreviosCard}
             /> 
             ) 
-            : <Typography>{messages.loading}</Typography>
           }
         </Grid>
       )

@@ -43,7 +43,7 @@ const BasicCard = ({currentCard, index, handleDeleteCard, nextCard, previosCard,
 						<NavigateBeforeIcon />
 					</IconButton>
 	
-					<IconButton onClick={() => handleDeleteCard(currentCard.id)}>
+					<IconButton onClick={() => handleDeleteCard(currentCard.id, currentCard.lista)}>
 						<DeleteIcon />
 					</IconButton>
 	
